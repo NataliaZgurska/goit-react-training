@@ -29,7 +29,7 @@ export default function App() {
     </div>
 
     <div>
-			<h1>Books of the week</h1>
+			<h1>Books of the week you have to read</h1>
       <BookList books={favouriteBooks} />
     </div>
   </>
