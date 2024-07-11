@@ -52,6 +52,9 @@ export default function App() {
         <h1>Best products</h1>
         <BestProduct productList={ productList} />
       </div>
+      <div>
+        
+      </div>
   </>
   );
 }
