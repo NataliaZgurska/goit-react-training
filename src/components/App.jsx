@@ -2,32 +2,97 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
-const schema = yup
-  .object({
-    name: yup.string().required('Name is required'),
-    gender: yup
-      .string()
-      .oneOf(['female', 'male'], 'Gender is required')
-      .required('Gender is required'),
-    email: yup.string().email(),
-    weight: yup.number().positive().required('Weight is required'),
-    sportTime: yup.number().positive().required('sportTime is required'),
-    waterAmount: yup.number().positive().required('sportTime is required'),
-  })
-  .required();
+const DECIMAL_PATTERN = /^\d+(\.\d+)?$/;
+// const convertingToNumber = str => {
+//   let num = parseFloat(str);
+//   num = Math.floor(num * 10) / 10;
+//   return num;
+// };
+
+const convertingToNumber = str => {
+  return Math.floor(parseFloat(str) * 10) / 10;
+};
+
+const dailyNormaRecomendCalculation = (gender, weight, sport) => {
+  if (!weight) return 1.8;
+  if (!sport) sport = 0;
+  const baseValue = gender === 'female' ? 0.03 : 0.04;
+  const sportValue = gender === 'female' ? 0.4 : 0.6;
+  return (weight * baseValue + sport * sportValue).toFixed(1);
+};
+
+const schema = yup.object().shape({
+  gender: yup.string().oneOf(['female', 'male']),
+  weight: yup
+    .string()
+    .matches(DECIMAL_PATTERN, 'please enter a positive number')
+    .notRequired(),
+  sportTime: yup
+    .string()
+    .matches(DECIMAL_PATTERN, 'please enter a positive number')
+    .notRequired(),
+  dayliNorma: yup
+    .string()
+    .matches(DECIMAL_PATTERN, 'please enter a positive number')
+    .notRequired(),
+});
 
 export default function App() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       gender: 'female',
+      weight: null,
+      sportTime: null,
+      dayliNorma: null,
     },
   });
-  const onSubmit = data => console.log(data);
+
+  const genderValue = watch('gender');
+  const weightNumber = convertingToNumber(watch('weight'));
+  const sportTimeNumber = convertingToNumber(watch('sportTime'));
+  const dayliNormaNumber = convertingToNumber(watch('dayliNorma'));
+
+  const dayliNormaRecomended = dailyNormaRecomendCalculation(
+    genderValue,
+    weightNumber,
+    sportTimeNumber
+  );
+
+  const onSubmit = data => {
+    console.log(data);
+
+    const formData = new FormData();
+
+    Object.keys(data).forEach(key => {
+      switch (key) {
+        case 'gender':
+          return formData.append(key, data[key]);
+        case 'weight':
+          if (weightNumber) {
+            formData.append(key, weightNumber);
+          }
+          break;
+        case 'sportTime':
+          if (sportTimeNumber) {
+            formData.append(key, sportTimeNumber);
+          }
+          break;
+        case 'dayliNorma':
+          if (!dayliNormaNumber) {
+            return formData.append(key, dayliNormaRecomended);
+          }
+          return formData.append(key, dayliNormaNumber);
+      }
+    });
+
+    console.log(...formData);
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -39,33 +104,38 @@ export default function App() {
       </div>
 
       <div>
-        <label>Your name</label>
-        <input {...register('name')} />
-        <p>{errors.name?.message}</p>
-      </div>
-
-      <div>
-        <label>Email</label>
-        <input {...register('email')} />
-        <p>{errors.email?.message}</p>
-      </div>
-
-      <div>
         <label>Your weight in kilograms:</label>
-        <input type="number" {...register('weight')} />
+        <input type="string" {...register('weight')} />
         <p>{errors.weight?.message}</p>
+        <i>
+          {weightNumber}, {typeof weightNumber}
+        </i>
       </div>
 
       <div>
         <label>The time of active participation in sports:</label>
-        <input type="number" {...register('sportTime')} />
+        <input type="string" {...register('sportTime')} />
         <p>{errors.sportTime?.message}</p>
+        <i>
+          {sportTimeNumber}, {typeof sportTimeNumber}
+        </i>
       </div>
 
       <div>
-        <label>The required amount of water in liters per day:</label>
-        <input type="number" {...register('waterAmount')} />
-        <p>{errors.waterAmount?.message}</p>
+        <p style={{ color: 'blue' }}>
+          The required amount of water in liters per day:
+          {dayliNormaRecomended}l
+        </p>
+        <label>Write down how much water you will drink:</label>
+        <input
+          type="string"
+          {...register('dayliNorma')}
+          placeholder={dayliNormaRecomended}
+        />
+        <p>{errors.dayliNorma?.message}</p>
+        <i>
+          {dayliNormaNumber}, {typeof dayliNormaNumber}
+        </i>
       </div>
 
       <input type="submit" />
@@ -73,59 +143,119 @@ export default function App() {
   );
 }
 
-// import { useState } from 'react';
-// const favouriteBooks = [
-//   { id: "id-1", name: "JS for beginners" },
-//   { id: "id-2", name: "React basics" },
-//   { id: "id-3", name: "React Router overview" }
-// ];
+// import { useForm } from 'react-hook-form';
+// import { yupResolver } from '@hookform/resolvers/yup';
+// import * as yup from 'yup';
 
-// import productList from './productList.json'
-// import cats from './cats.json'
+// const DECIMAL_PATTERN = /^\d+(\.\d+)?$/;
+// const convertingToNumber = str => {
+//   let num = parseFloat(str);
+//   num = Math.round(num * 10) / 10;
+//   return num;
+// };
 
-// import BestProduct from "./BestProduct/BestProduct";
-// import BookList from "./BookList";
-// import Cats from './Cats/Cats';
-// import CatsListBtn from './CatsListBtn/CatsListBtn';
+// const dailyNormaRecomendCalculation = (gender, weight = 0, sport = 0) => {
+//   if (!weight) return 1.8;
+//   switch (gender) {
+//     case 'female':
+//       console.log(gender, weight, sport);
+//       return (weight * 0.03 + sport * 0.4).toFixed(1);
+//     case 'male':
+//       return (weight * 0.04 + sport * 0.6).toFixed(1);
+//   }
+// };
 
-// const initialLikes = { cat1: 0, cat2: 0, cat3: 0, cat4: 0 };
+// const schema = yup.object().shape({
+//   gender: yup.string().oneOf(['female', 'male']),
+//   weight: yup
+//     .string()
+//     .matches(DECIMAL_PATTERN, 'please enter a positive number')
+//     .notRequired(),
+//   sportTime: yup
+//     .string()
+//     .matches(DECIMAL_PATTERN, 'please enter a positive number')
+//     .notRequired(),
+//   dayliNorma: yup
+//     .string()
+//     .matches(DECIMAL_PATTERN, 'please enter a positive number')
+//     .notRequired(),
+// });
 
 // export default function App() {
-//   const [likes, setLikes] = useState(initialLikes );
+//   const {
+//     register,
+//     handleSubmit,
+//     watch,
+//     formState: { errors },
+//   } = useForm({
+//     resolver: yupResolver(schema),
+//     defaultValues: {
+//       gender: 'female',
+//       weight: null,
+//       sportTime: null,
+//       dayliNorma: null,
+//     },
+//   });
+//   const onSubmit = data => console.log(data);
 
-//   const handleLogLikes = (catName) => {
-//   setLikes({ ...likes, [catName]: likes[catName] + 1 })
-//   };
-//   const handleResetLikes = () => { setLikes(initialLikes); };
-//  const totalLike = Object.values(likes).reduce((acc, item) => acc+item, 0)
+//   const genderValue = watch('gender');
+//   const weightNumber = convertingToNumber(watch('weight'));
+//   const sportTimeNumber = convertingToNumber(watch('sportTime'));
+//   const dayliNormaNumber = convertingToNumber(watch('dayliNorma'));
+
+//   const dayliNormaRecomended = dailyNormaRecomendCalculation(
+//     genderValue,
+//     weightNumber,
+//     sportTimeNumber
+//   );
+//   console.log(dayliNormaRecomended);
 
 //   return (
-//     <>
+//     <form onSubmit={handleSubmit(onSubmit)}>
 //       <div>
-//         <h1>Send Likes for cats</h1>
-//         <CatsListBtn likes={likes}
-//           handleLogLikes={handleLogLikes}
-//           handleResetLikes={handleResetLikes}
-//        totalLike={totalLike}
+//         <label>Your gender identity</label>
+//         <input type="radio" value="female" {...register('gender')} /> Woman
+//         <input type="radio" value="male" {...register('gender')} /> Man
+//         <p>{errors.gender?.message}</p>
+//       </div>
+
+//       <div>
+//         <label>Your weight in kilograms:</label>
+//         <input type="string" {...register('weight')} />
+//         <p>{errors.weight?.message}</p>
+//         <i>
+//           {weightNumber}, {typeof weightNumber}
+//         </i>
+//       </div>
+
+//       <div>
+//         <label>The time of active participation in sports:</label>
+//         <input type="string" {...register('sportTime')} />
+//         <p>{errors.sportTime?.message}</p>
+//         <i>
+//           {sportTimeNumber}, {typeof sportTimeNumber}
+//         </i>
+//       </div>
+
+//       <div>
+//         <p style={{ color: 'blue' }}>
+//           The required amount of water in liters per day:
+//           {dayliNormaRecomended}l
+//         </p>
+//         <label>Write down how much water you will drink:</label>
+//         <input
+//           type="string"
+//           {...register('dayliNorma')}
+//           // placeholder={dailyNormaRecomen}
+//           value={dayliNormaRecomended}
 //         />
-//       </div>
-//       <div>
-//         <h1>Best cats</h1>
-//         <Cats cats={cats} />
-//       </div>
-
-//      <div>
-// 			<h1>Books of the week you have to read</h1>
-//       <BookList books={favouriteBooks} />
+//         <p>{errors.dayliNorma?.message}</p>
+//         <i>
+//           {dayliNormaNumber}, {typeof dayliNormaNumber}
+//         </i>
 //       </div>
 
-//       <div>
-//         <h1>Best products</h1>
-//         <BestProduct productList={ productList} />
-//       </div>
-//       <div>
-
-//       </div>
-//   </>
+//       <input type="submit" />
+//     </form>
 //   );
 // }

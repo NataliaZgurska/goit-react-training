@@ -71,3 +71,12 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+div {
+  margin-top: 20px;
+}
+
+p {
+  margin-top: 10px;
+  color: red;
+}
